@@ -1,0 +1,41 @@
+﻿@page "/weather"
+@inject HttpClient Http
+
+<h3>Dados Climáticos</h3>
+
+@if (weatherData == null)
+{
+    <p>Carregando dados climáticos...</p>
+}
+else
+{
+    <ul>
+        @foreach (var weather in weatherData)
+        {
+            <li>@weather.City: @weather.Temperature°C, @weather.Description</li>
+        }
+    </ul>
+}
+
+@code {
+    private List<WeatherDto>? weatherData;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            weatherData = await Http.GetFromJsonAsync<List<WeatherDto>>("api/weather"); // Ajuste a rota para sua API
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao buscar dados climáticos: {ex.Message}");
+        }
+    }
+
+    public class WeatherDto
+    {
+        public string City { get; set; }
+        public double Temperature { get; set; }
+        public string Description { get; set; }
+    }
+}
