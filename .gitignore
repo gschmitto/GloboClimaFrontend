@@ -1,0 +1,28 @@
+# Ignore the build output
+bin/
+obj/
+
+# User secrets
+# Uncomment if using User Secrets
+# **/secrets.json
+
+# Visual Studio files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider files
+.idea/
+*.sln.iml
+
+# Backup files
+*~ 
+*.bak
+
+# Logs
+*.log
+
+# NuGet packages
+*.nupkg
+**/packages/*
