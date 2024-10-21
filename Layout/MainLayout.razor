@@ -5,7 +5,7 @@
 
 <div class="page">
     <div class="sidebar">
-        <NavMenu @ref="navMenu" />
+        <NavMenu @ref="navMenu" IsLoggedIn="@AuthService.IsLoggedIn" />
     </div>
 
     <main>
@@ -33,6 +33,7 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthService.IsLoggedInAsync();
+        navMenu.UpdateLoginStatus();
     }
 
     private async Task Logout()

@@ -1,4 +1,4 @@
-﻿@inject AuthService authService
+﻿@inject AuthService AuthService
 @using GloboClimaFrontend.Services
 
 <div class="top-row ps-3 navbar navbar-dark">
@@ -22,7 +22,7 @@
                 <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
             </NavLink>
         </div>
-        @if (isLoggedIn)
+        @if (IsLoggedIn)
         {
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="favorites">
@@ -34,8 +34,10 @@
 </div>
 
 @code {
+    [Parameter]
+    public bool IsLoggedIn { get; set; }
+
     private bool collapseNavMenu = true;
-    private bool isLoggedIn = false;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
@@ -46,7 +48,7 @@
 
     public async Task UpdateLoginStatus()
     {
-        isLoggedIn = await authService.IsLoggedInAsync();
+        await AuthService.IsLoggedInAsync();
         StateHasChanged();
     }
 
