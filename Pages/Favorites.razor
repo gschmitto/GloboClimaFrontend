@@ -1,0 +1,140 @@
+@page "/favorites"
+@inject HttpClient Http
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+@using Newtonsoft.Json
+
+<PageTitle>Favoritos - GloboClima</PageTitle>
+
+<h3>Suas Cidades Favoritas</h3>
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (cities == null)
+{
+    <p>Carregando cidades favoritas...</p>
+}
+else if (cities.Count == 0)
+{
+    <p>Você ainda não possui cidades favoritas.</p>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var city in cities)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@city.cityName</span>
+                <div>
+                    <button class="btn btn-primary" style="width: 115px;" @onclick="@(() => NavigateToWeather(city.cityName))">Ver Clima</button>
+                    <button class="btn btn-danger" style="width: 115px;" @onclick="@(() => DeleteFavoriteCity(city.cityName))">Excluir</button>
+                </div>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private List<City> cities;
+    private string errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFavoriteCities();
+    }
+
+    private async Task LoadFavoriteCities()
+    {
+        try
+        {
+            var token = await LocalStorage.GetItemAsync<string>("authToken");
+
+            if (string.IsNullOrEmpty(token))
+            {
+                errorMessage = "Você precisa estar logado para visualizar suas cidades favoritas.";
+                return;
+            }
+
+            var request = new HttpRequestMessage(HttpMethod.Get, "/api/City/favorites/city");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await Http.SendAsync(request);
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+
+            if (!string.IsNullOrWhiteSpace(jsonResponse) && jsonResponse.Contains("Você não tem cidades favoritas"))
+            {
+                errorMessage = jsonResponse;
+            } 
+            else if (response.IsSuccessStatusCode)
+            {                
+                if (!string.IsNullOrWhiteSpace(jsonResponse))
+                {
+                    cities = JsonConvert.DeserializeObject<List<City>>(jsonResponse);
+                    
+                    if (cities == null || cities.Count == 0)
+                    {
+                        errorMessage = "Você ainda não possui cidades favoritas.";
+                    }
+                }
+                else
+                {
+                    errorMessage = "Você ainda não possui cidades favoritas.";
+                }
+            }
+            else
+            {
+                errorMessage = "Erro ao carregar suas cidades favoritas.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao tentar carregar suas cidades favoritas: {ex.Message}";
+        }
+    }
+
+    private void NavigateToWeather(string cityName)
+    {
+        // Redireciona para a página de clima da cidade selecionada
+        NavigationManager.NavigateTo($"/weather/{cityName}");
+    }
+    private async Task DeleteFavoriteCity(string cityName)
+    {
+        try
+        {
+            var token = await LocalStorage.GetItemAsync<string>("authToken");
+
+            if (string.IsNullOrEmpty(token))
+            {
+                errorMessage = "Você precisa estar logado para excluir cidades favoritas.";
+                return;
+            }
+
+            var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/City/favorites/city/{cityName}");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Recarrega a lista de cidades favoritas após a exclusão bem-sucedida
+                await LoadFavoriteCities();
+            }
+            else
+            {
+                errorMessage = $"Erro ao excluir a cidade {cityName}.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao tentar excluir a cidade {cityName}: {ex.Message}";
+        }
+    }
+
+    public class City
+    {
+        public string cityName { get; set; }
+    }
+}

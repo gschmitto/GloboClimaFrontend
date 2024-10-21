@@ -1,7 +1,10 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@inject AuthService authService
+@using GloboClimaFrontend.Services
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">GloboClimaFrontend</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+        <button title="Navigation menu" @onclick="ToggleNavMenu" class="navbar-toggler">
             <span class="navbar-toggler-icon"></span>
         </button>
     </div>
@@ -19,13 +22,33 @@
                 <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
             </NavLink>
         </div>
+        @if (isLoggedIn)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="favorites">
+                    <span class="bi bi-heart-fill-nav-menu" aria-hidden="true"></span> Favorites Cities
+                </NavLink>
+            </div>
+        }
     </nav>
 </div>
 
 @code {
     private bool collapseNavMenu = true;
+    private bool isLoggedIn = false;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateLoginStatus();
+    }
+
+    public async Task UpdateLoginStatus()
+    {
+        isLoggedIn = await authService.IsLoggedInAsync();
+        StateHasChanged();
+    }
 
     private void ToggleNavMenu()
     {

@@ -1,11 +1,19 @@
 @page "/weather/{cityName}"
 @inject WeatherService weatherService
+@inject HttpClient Http
 @using GloboClimaFrontend.Models
 @using GloboClimaFrontend.Services
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@using System.Text
+@using System.Net.Http.Headers
+@using Newtonsoft.Json
 
 <PageTitle>Weather - GloboClima</PageTitle>
 
-<h3>Clima em @cityName</h3>
+<div class="d-flex justify-content-between align-items-center">
+    <h3 class="me-3">Clima em @cityName</h3>
+    <button @onclick="FavoriteCity" class="btn btn-primary" style="width: 90px;">Favoritar</button>
+</div>
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {
@@ -78,6 +86,48 @@ else
         else
         {
             errorMessage = "Nome da cidade está vazio.";
+        }
+    }
+
+    private async Task FavoriteCity()
+    {
+        try
+        {
+            // Obtém o token de autenticação do LocalStorage
+            var token = await LocalStorage.GetItemAsync<string>("authToken");
+
+            if (string.IsNullOrEmpty(token))
+            {
+                errorMessage = "Você precisa estar logado para favoritar uma cidade.";
+                return;
+            }
+
+            // Cria a requisição para favoritar a cidade
+            var requestBody = new { cityName = cityName };
+            var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
+
+            // Cria a requisição HTTP e adiciona o token no cabeçalho de autenticação
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, "/api/City/favorites/city")
+            {
+                Content = content
+            };
+            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            // Envia a requisição
+            var response = await Http.SendAsync(requestMessage);
+
+            if (response.IsSuccessStatusCode)
+            {
+                errorMessage = "Cidade favoritada com sucesso!";
+            }
+            else
+            {
+                errorMessage = "Erro ao favoritar a cidade.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao tentar favoritar a cidade: {ex.Message}";
         }
     }
 }

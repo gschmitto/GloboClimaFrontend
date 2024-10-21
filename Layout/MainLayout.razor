@@ -5,14 +5,14 @@
 
 <div class="page">
     <div class="sidebar">
-        <NavMenu />
+        <NavMenu @ref="navMenu" />
     </div>
 
     <main>
         <div class="top-row px-4">
             @if (AuthService.IsLoggedIn)
             {
-                <a @onclick="Logout">Logout</a>
+                <a style="cursor: pointer;" @onclick="Logout">Logout</a>
             }
             else
             {
@@ -28,15 +28,17 @@
 </div>
 
 @code {
+    private NavMenu navMenu;
+
     protected override async Task OnInitializedAsync()
     {
-        // Verificar o estado de login ao inicializar
         await AuthService.IsLoggedInAsync();
     }
 
     private async Task Logout()
     {
         await AuthService.LogoutAsync();
-        NavigationManager.NavigateTo("/"); // Redirecionar para a página inicial
+        navMenu.UpdateLoginStatus();
+        NavigationManager.NavigateTo("/");
     }
 }
