@@ -1,0 +1,94 @@
+@page "/login"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject AuthService authService
+@using Newtonsoft.Json
+@using GloboClimaFrontend.Services
+
+<div class="register-container">
+    <h3>Login</h3>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
+    @if (isLoggedIn)
+    {
+        <div class="alert alert-success">
+            Login bem-sucedido! Você será redirecionado em breve.
+        </div>
+    }
+
+    <EditForm Model="@userModel" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <InputText id="email" @bind-Value="userModel.Email" class="form-control" />
+            <ValidationMessage For="@(() => userModel.Email)" />
+        </div>
+
+        <div class="form-group">
+            <label for="password">Senha:</label>
+            <InputText id="password" @bind-Value="userModel.Password" type="password" class="form-control" />
+            <ValidationMessage For="@(() => userModel.Password)" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Login</button>
+    </EditForm>
+</div>
+
+@code {
+    private UserModel userModel = new UserModel();
+    private bool isLoggedIn = false;
+    private string errorMessage;
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("/api/Auth/login", userModel);
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                var tokenResponse = JsonConvert.DeserializeObject<TokenResponse>(jsonResponse);
+                var token = tokenResponse?.Token;
+
+                if (token != null)
+                {
+                    await LocalStorage.SetItemAsync("authToken", token);
+                    await authService.IsLoggedInAsync();
+                    NavigationManager.NavigateTo("/");
+                }
+                else
+                {
+                    errorMessage = "Token não encontrado na resposta.";
+                }
+            }
+            else
+            {
+                errorMessage = "Erro ao fazer login. Verifique suas credenciais.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao chamar a API: {ex.Message}";
+        }
+    }
+
+    public class UserModel
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+
+    public class TokenResponse
+    {
+        public string Token { get; set; }
+    }
+}

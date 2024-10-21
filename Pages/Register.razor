@@ -1,0 +1,72 @@
+@page "/register"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<div class="register-container">
+    <h3>Registro</h3>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
+    @if (isRegistered)
+    {
+        <div class="alert alert-success">
+            Registro bem-sucedido! Você pode agora <a href="/login">fazer login</a>.
+        </div>
+    }
+
+    <EditForm Model="@userModel" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <InputText id="email" @bind-Value="userModel.Email" class="form-control" />
+            <ValidationMessage For="@(() => userModel.Email)" />
+        </div>
+
+        <div class="form-group">
+            <label for="password">Senha:</label>
+            <InputText id="password" @bind-Value="userModel.Password" type="password" class="form-control" />
+            <ValidationMessage For="@(() => userModel.Password)" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Registrar</button>
+    </EditForm>
+</div>
+
+@code {
+    private UserModel userModel = new UserModel();
+    private bool isRegistered = false;
+    private string errorMessage;
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("/api/Auth/register", userModel);
+            if (response.IsSuccessStatusCode)
+            {
+                isRegistered = true;
+            }
+            else
+            {
+                errorMessage = "Erro ao registrar. Verifique suas informações.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro ao chamar a API: {ex.Message}";
+        }
+    }
+
+    public class UserModel
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+}

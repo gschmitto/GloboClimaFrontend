@@ -1,41 +1,83 @@
-﻿@page "/weather"
-@inject HttpClient Http
+@page "/weather/{cityName}"
+@inject WeatherService weatherService
+@using GloboClimaFrontend.Models
+@using GloboClimaFrontend.Services
 
-<h3>Dados Climáticos</h3>
+<PageTitle>Weather - GloboClima</PageTitle>
 
-@if (weatherData == null)
+<h3>Clima em @cityName</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
 {
-    <p>Carregando dados climáticos...</p>
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
+
+@if (weatherResponse != null)
+{
+    <div>
+        <p><strong>Coordenadas:</strong> Latitude: @weatherResponse.Coord.Lat, Longitude: @weatherResponse.Coord.Lon</p>
+        <p><strong>Visibilidade:</strong> @(weatherResponse.Visibility / 1000) km</p>
+
+        <h5>Dados Principais:</h5>
+        <p><strong>Temperatura:</strong> @Math.Round(weatherResponse.Main.Temp - 273.15) &deg;C</p>
+        <p><strong>Temperatura Aparente:</strong> @Math.Round(weatherResponse.Main.FeelsLike - 273.15) &deg;C</p>
+        <p><strong>Temperatura Mínima:</strong> @Math.Round(weatherResponse.Main.TempMin - 273.15) &deg;C</p>
+        <p><strong>Temperatura Máxima:</strong> @Math.Round(weatherResponse.Main.TempMax - 273.15) &deg;C</p>
+        <p><strong>Pressão:</strong> @weatherResponse.Main.Pressure hPa</p>
+        <p><strong>Umidade:</strong> @weatherResponse.Main.Humidity %</p>
+        <p><strong>Nível do Mar:</strong> @weatherResponse.Main.SeaLevel m</p>
+        <p><strong>Nível do Solo:</strong> @weatherResponse.Main.GrndLevel m</p>
+
+        <h5>Vento:</h5>
+        @if (weatherResponse.Wind != null)
+        {
+            <p><strong>Velocidade:</strong> @(weatherResponse.Wind.Speed * 3.6) km/h</p>
+            <p><strong>Direção:</strong> @weatherResponse.Wind.Deg &deg;</p>
+            <p><strong>Rajada:</strong> @(weatherResponse.Wind.Gust * 3.6) km/h</p>
+        }
+
+        <h5>Sistema:</h5>
+        @if (weatherResponse.Sys != null)
+        {
+            <p><strong>País:</strong> @weatherResponse.Sys.Country</p>
+            <p><strong>Nascer do Sol:</strong> @DateTimeOffset.FromUnixTimeSeconds(weatherResponse.Sys.Sunrise).ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</p>
+            <p><strong>Por do Sol:</strong> @DateTimeOffset.FromUnixTimeSeconds(weatherResponse.Sys.Sunset).ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</p>
+        }
+    </div>
 }
 else
 {
-    <ul>
-        @foreach (var weather in weatherData)
-        {
-            <li>@weather.City: @weather.Temperature°C, @weather.Description</li>
-        }
-    </ul>
+    <p>Carregando dados do clima...</p>
 }
 
 @code {
-    private List<WeatherDto>? weatherData;
+    [Parameter] public string cityName { get; set; }
+    private WeatherResponse weatherResponse;
+    private string errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        try
+        if (!string.IsNullOrEmpty(cityName))
         {
-            weatherData = await Http.GetFromJsonAsync<List<WeatherDto>>("api/weather"); // Ajuste a rota para sua API
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro ao buscar dados climáticos: {ex.Message}");
-        }
-    }
+            try
+            {
+                weatherResponse = await weatherService.GetWeatherByCityAsync(cityName);
 
-    public class WeatherDto
-    {
-        public string City { get; set; }
-        public double Temperature { get; set; }
-        public string Description { get; set; }
+                if (weatherResponse == null)
+                {
+                    errorMessage = "Nenhuma resposta recebida do serviço de clima.";
+                }
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Erro ao chamar o serviço de clima: {ex.Message}";
+            }
+        }
+        else
+        {
+            errorMessage = "Nome da cidade está vazio.";
+        }
     }
 }

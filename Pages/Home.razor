@@ -1,7 +1,59 @@
 ﻿@page "/"
+@inject NavigationManager NavigationManager
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Home - GloboClima</PageTitle>
 
-<h1>Hello, world!</h1>
+<style>
+    .hero {
+        background: #00000063;
+        color: white;
+        padding: 50px;
+        text-align: center;
+    }
+    .search-button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+    .search-button:hover {
+        background-color: #0056b3;
+    }
+    .search-input {
+        margin-top: 20px;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        width: 300px;
+    }
+</style>
 
-Welcome to your new app.
+<div class="hero">
+    <h1>Bem-vindo ao GloboClima!</h1>
+    <p>Seu portal para informações climáticas e dados sobre países.</p>
+    <p>Descubra o clima atual de suas cidades favoritas!</p>
+    
+    <!-- Campo de entrada para o nome da cidade -->
+    <input type="text" @bind="cityName" placeholder="Digite o nome da cidade" class="search-input" />
+    
+    <!-- Botão para iniciar a pesquisa -->
+    <button class="search-button" @onclick="NavigateToWeather">Pesquisar</button>
+</div>
+
+@code {
+    private string cityName; // Variável para armazenar o nome da cidade
+
+    private void NavigateToWeather()
+    {
+        // Redirecionar para a página de resultados com o nome da cidade
+        if (!string.IsNullOrWhiteSpace(cityName))
+        {
+            NavigationManager.NavigateTo($"/weather/{cityName}");
+        }
+    }
+}
